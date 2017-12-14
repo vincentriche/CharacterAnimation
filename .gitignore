@@ -1,0 +1,7 @@
+Library/
+Temp/
+Builds/
+Tests/
+*.csproj
+*.sln
+.vs/
