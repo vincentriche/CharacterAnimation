@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
-public class IK : MonoBehaviour
+public class IKFoot : MonoBehaviour
 {
 	private Animator animator;
 	private Transform leftFoot, rightFoot;

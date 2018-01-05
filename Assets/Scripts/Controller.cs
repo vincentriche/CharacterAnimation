@@ -1,9 +1,11 @@
 ﻿using UnityEngine;
 
 // TODO
-// Run animation speed to adapt + transition between run and walk
-// Running Jump
-// Inverse Kinematic
+// -IKLook at random object in scene
+// -Run animation speed to adapt + transition between run and walk
+// -Script custom inspector A.Meyer
+// -Edition multi résolution A.Meyer
+// -
 public class Controller : MonoBehaviour
 {
 	public static Controller Instance;
@@ -22,7 +24,6 @@ public class Controller : MonoBehaviour
 	private Vector3 groundSpeed;
 	private float walkAndRunTransitionSpeed = 2.0f;
 	private Rigidbody m_rigidbody;
-	private float h;
 	private bool ragdollEnabled;
 
 	private void Awake()
@@ -154,7 +155,7 @@ public class Controller : MonoBehaviour
 				rb.isKinematic = false;
 
 			m_rigidbody.isKinematic = true;
-			GetComponent<IK>().enabled = false;
+			GetComponent<IKFoot>().enabled = false;
 			GetComponentInChildren<MouseLook>().enabled = false;
 			GetComponent<CapsuleCollider>().enabled = false;
 			animator.enabled = false;
@@ -168,7 +169,7 @@ public class Controller : MonoBehaviour
 			foreach (Rigidbody rb in rigRigidbodies)
 				rb.isKinematic = true;
 
-			GetComponent<IK>().enabled = true;
+			GetComponent<IKFoot>().enabled = true;
 			GetComponentInChildren<MouseLook>().enabled = true;
 			GetComponent<CapsuleCollider>().enabled = true;
 			animator.enabled = true;
