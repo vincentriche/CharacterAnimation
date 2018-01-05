@@ -3,9 +3,7 @@
 // TODO
 // -IKLook at random object in scene
 // -Run animation speed to adapt + transition between run and walk
-// -Script custom inspector A.Meyer
 // -Edition multi résolution A.Meyer
-// -
 public class Controller : MonoBehaviour
 {
 	public static Controller Instance;

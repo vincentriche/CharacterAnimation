@@ -21,10 +21,6 @@ public class PlayAnimationEditor : EditorWindow
 	[SerializeField]
 	protected AnimationClip clipToPlay;
 
-
-	// Boolean to check if the animation is playing or not
-	private bool animationPlaying = false;
-
 	// Stocks the current Time
 	protected float currentFrameTime = 0.0f;
 
@@ -185,32 +181,11 @@ public class PlayAnimationEditor : EditorWindow
 			currentFrameTime = EditorGUILayout.Slider("Time (seconds)", currentFrameTime, firstFrameTime, clipLength);
 			// If the user has modified the Slider Precision here, we can detect it and call a fonction for example
 			if (EditorGUI.EndChangeCheck())
-				samplePosture(currentFrameTime);
+				SamplePosture(currentFrameTime);
 
 			EditorGUI.BeginChangeCheck();
 			// Then we create the Object that we want to track some change on 
 			scaleTime = EditorGUILayout.Slider("Scale Time", scaleTime, 0.0f, 2.0f);
-
-			if (!animationPlaying)
-			{
-				// Create a Button in order to plays the AnimationClip
-				if (GUILayout.Button("Start Animation"))
-				{
-					// Starts the Coroutine that will play the Animation
-					// Swing.Editor.EditorCoroutine.start(repeatAnimation(m_f_frameDuration));
-					// Coroutine is runnning
-					animationPlaying = true;
-				}
-			}
-			else
-			{
-				// Stop the Coroutine
-				if (GUILayout.Button("Stop Animation"))
-				{
-					// Swing.Editor.EditorCoroutine.stop(repeatAnimation(m_f_frameDuration));
-					animationPlaying = false;
-				}
-			}
 
 			// Toogles for each bone
 			for (int i = 0; i < toogleTrajectories.Count; i++)
@@ -244,7 +219,7 @@ public class PlayAnimationEditor : EditorWindow
 
 
 	// Sample our Skeleton at the time given in parameter for the currentAnimationClip
-	private void samplePosture(float p_f_time)
+	private void SamplePosture(float p_f_time)
 	{
 		// Check if the Game isn't running & the Animation Mode is enabled
 		if (!EditorApplication.isPlaying && AnimationMode.InAnimationMode())
