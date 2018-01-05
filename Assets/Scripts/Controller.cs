@@ -22,7 +22,7 @@ public class Controller : MonoBehaviour
 	private Vector3 groundSpeed;
 	private float walkAndRunTransitionSpeed = 2.0f;
 	private Rigidbody m_rigidbody;
-	private float turn;
+	private float h;
 
 	private void Awake()
 	{
@@ -72,13 +72,9 @@ public class Controller : MonoBehaviour
 	{
 		// Move
 		if (move.x != 0f || move.z != 0f)
-		{
 			m_rigidbody.AddRelativeForce(move * accelerationSpeed * Time.deltaTime);
-		}
 		if (Input.GetAxisRaw("Vertical") == 0f && Input.GetAxisRaw("Horizontal") == 0f)
-		{
 			m_rigidbody.velocity = Vector3.zero;
-		}
 
 		// Cap Speed
 		Vector2 rigidbody_movement = new Vector2(m_rigidbody.velocity.x, m_rigidbody.velocity.z);
@@ -111,22 +107,18 @@ public class Controller : MonoBehaviour
 
 	private void SetAnimatorValues()
 	{
-		float mX = Mathf.Clamp(Input.GetAxisRaw("Mouse X"), -1, 1);
-		if (mX != 0)
-		{
-			turn += mX * 10.0f * Time.deltaTime;
-			turn = Mathf.Clamp(turn, -1.0f, 1.0f);
-		}
-		else
-			turn = Mathf.Lerp(turn, 0.0f, 10.0f * Time.deltaTime);
-		turn += Input.GetAxis("Horizontal");
+		// Horizontal Axis
+		float h = Input.GetAxis("Horizontal");
+
+		// Vertical Axis
 		float f = Input.GetAxis("Vertical");
 		if (state != State.Running)
 			f = Mathf.Clamp(f, 0.0f, 0.5f);
 
+		// Applying
 		animator.SetFloat("Upspeed", m_rigidbody.velocity.y);
 		animator.SetFloat("Forward", f);
-		animator.SetFloat("Horizontal", turn);
+		animator.SetFloat("Horizontal", h);
 		animator.SetBool("Grounded", state == State.Grounded);
 		animator.SetBool("Jump", Input.GetKeyDown(KeyCode.Space));
 		animator.SetBool("Crouch", state == State.Crouched ? true : false);
