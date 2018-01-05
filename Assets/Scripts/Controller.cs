@@ -23,6 +23,7 @@ public class Controller : MonoBehaviour
 	private float walkAndRunTransitionSpeed = 2.0f;
 	private Rigidbody m_rigidbody;
 	private float h;
+	private bool ragdollEnabled;
 
 	private void Awake()
 	{
@@ -30,12 +31,23 @@ public class Controller : MonoBehaviour
 		m_rigidbody = GetComponent<Rigidbody>();
 		animator = GetComponent<Animator>();
 		cap = maxWalkingSpeed;
+		ragdollEnabled = false;
+		SwitchRagdollMode();
 	}
 
 	private void Update()
 	{
-		UpdateState();
-		SetAnimatorValues();
+		if (Input.GetKeyDown(KeyCode.R))
+		{
+			ragdollEnabled = !ragdollEnabled;
+			SwitchRagdollMode();
+		}
+
+		if (ragdollEnabled == false)
+		{
+			UpdateState();
+			SetAnimatorValues();
+		}
 	}
 
 	private void FixedUpdate()
@@ -128,6 +140,40 @@ public class Controller : MonoBehaviour
 	{
 		if (state == State.Jumped)
 			state = State.Grounded;
+	}
+
+	private void SwitchRagdollMode()
+	{
+		if (ragdollEnabled == true)
+		{
+			var rigColliders = GetComponentsInChildren<Collider>();
+			var rigRigidbodies = GetComponentsInChildren<Rigidbody>();
+			foreach (Collider col in rigColliders)
+				col.enabled = true;
+			foreach (Rigidbody rb in rigRigidbodies)
+				rb.isKinematic = false;
+
+			m_rigidbody.isKinematic = true;
+			GetComponent<IK>().enabled = false;
+			GetComponentInChildren<MouseLook>().enabled = false;
+			GetComponent<CapsuleCollider>().enabled = false;
+			animator.enabled = false;
+		}
+		else
+		{
+			var rigColliders = GetComponentsInChildren<Collider>();
+			var rigRigidbodies = GetComponentsInChildren<Rigidbody>();
+			foreach (Collider col in rigColliders)
+				col.enabled = false;
+			foreach (Rigidbody rb in rigRigidbodies)
+				rb.isKinematic = true;
+
+			GetComponent<IK>().enabled = true;
+			GetComponentInChildren<MouseLook>().enabled = true;
+			GetComponent<CapsuleCollider>().enabled = true;
+			animator.enabled = true;
+			m_rigidbody.isKinematic = false;
+		}
 	}
 }
 

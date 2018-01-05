@@ -5,11 +5,9 @@ public class IK : MonoBehaviour
 {
 	private Animator animator;
 	private Transform leftFoot, rightFoot;
-
+	private Vector3 nextLeftFootPos, nextRightFootPos;
+	private Quaternion nextLeftFootRot, nextRightFootRot;
 	private RaycastHit hitInfo;
-	public float offsetY = -10.0f;
-	public Vector3 nextLeftFootPos, nextRightFootPos;
-	public Quaternion nextLeftFootRot, nextRightFootRot;
 
 	private void Awake()
 	{
@@ -48,13 +46,11 @@ public class IK : MonoBehaviour
 
 		animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, rightFootWeight);
 		animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, rightFootWeight);
-		//nextRightFootRot.y += offsetY;
 		animator.SetIKPosition(AvatarIKGoal.RightFoot, nextRightFootPos);
 		animator.SetIKRotation(AvatarIKGoal.RightFoot, nextRightFootRot);
 
 		animator.SetIKRotationWeight(AvatarIKGoal.LeftFoot, leftFootWeight);
 		animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, leftFootWeight);
-		//nextLeftFootPos.y += offsetY;
 		animator.SetIKPosition(AvatarIKGoal.LeftFoot, nextLeftFootPos);
 		animator.SetIKRotation(AvatarIKGoal.LeftFoot, nextLeftFootRot);
 	}
