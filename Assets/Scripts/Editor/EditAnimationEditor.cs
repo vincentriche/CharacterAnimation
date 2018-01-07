@@ -7,8 +7,10 @@ public class EditAnimationEditor : EditorWindow
 	private AnimationClip originalClip;
 	private bool multiresolutionMode = false;
 	private int N = 0;
+
 	// Store all the N curves for each bone of the clip
-	private List<List<AnimationCurve>> curves;
+	private List<List<MyAnimationCurve>> curves;
+
 	// Store the user defined coefficients for each level N
 	private List<float> levelCoefficients;
 
@@ -47,11 +49,14 @@ public class EditAnimationEditor : EditorWindow
 				if (EditorGUI.EndChangeCheck() == true)
 					SetupMultiresolutionEdition();
 
-				for (int i = 0; i < levelCoefficients.Count; i++)
-					levelCoefficients[i] = EditorGUILayout.FloatField("Level " + i.ToString(), levelCoefficients[i]);
+				if (levelCoefficients != null)
+				{
+					for (int i = 0; i < levelCoefficients.Count; i++)
+						levelCoefficients[i] = EditorGUILayout.FloatField("Level " + i.ToString(), levelCoefficients[i]);
 
-				if (GUILayout.Button("Compute Animation"))
-					MultiresolutionFilter();
+					if (GUILayout.Button("Compute Animation"))
+						MultiresolutionFilter();
+				}
 			}
 		}
 		EditorGUILayout.EndVertical();
@@ -79,55 +84,134 @@ public class EditAnimationEditor : EditorWindow
 			}
 			AnimationUtility.SetEditorCurve(clip, binding, curve);
 		}
-		AssetDatabase.CreateAsset(clip, "Assets/Gaussian.anim");
+		AssetDatabase.CreateAsset(clip, "Assets/GaussianAnim.anim");
 	}
 
 	private void SetupMultiresolutionEdition()
 	{
+		if (N == 0)
+			return;
+
 		levelCoefficients = new List<float>();
 		for (int i = 0; i < N; i++)
 			levelCoefficients.Add(1.0f);
 
-		curves = new List<List<AnimationCurve>>();
+		curves = new List<List<MyAnimationCurve>>();
+		for (int i = 0; i < N; i++)
+			curves.Add(new List<MyAnimationCurve>());
 		foreach (EditorCurveBinding binding in AnimationUtility.GetCurveBindings(originalClip))
 		{
-			List<AnimationCurve> levelCurves = new List<AnimationCurve>();
 			AnimationCurve boneCurve = AnimationUtility.GetEditorCurve(originalClip, binding);
 
 			// First level : Base curve
-			levelCurves.Add(boneCurve);
+			curves[0].Add(new MyAnimationCurve(boneCurve));
 
 			// Calculate each curve for the bone
 			AnimationCurve lastCurve = boneCurve;
-			for (int i = 0; i < N; i++)
+			for (int i = 1; i < N; i++)
 			{
 				AnimationCurve currentCurve = new AnimationCurve();
-
+				List<float> diffs = new List<float>();
 				for (int j = 0; j < lastCurve.length - 1; j += 2)
 				{
 					float time = (lastCurve[j].time + lastCurve[j + 1].time) / 2.0f;
 					float value = (lastCurve[j].value + lastCurve[j + 1].value) / 2.0f;
 					float diff = value - lastCurve[j].value;
-					//
-					// Todo : store the diff to be able to get back the full clip modified
-					// 
-					currentCurve.AddKey(time, value);
-				}
 
-				levelCurves.Add(currentCurve);
+					currentCurve.AddKey(time, value);
+					diffs.Add(diff);
+				}
+				curves[i].Add(new MyAnimationCurve(currentCurve, diffs));
 				lastCurve = currentCurve;
 			}
-
-			// Add all the bone's curves to the global array
-			curves.Add(levelCurves);
 		}
 	}
 
 	private void MultiresolutionFilter()
 	{
-		// TODO : 
-		// - Apply the level coefficient to each animation curves of each level
-		//  -Reconstruct the full animation from all the modified curves thanks to the "diff" value. (to store)
+		// TODO :
 		//  -Store the new clip in Assets/
+
+		// Move each curve according to user defined coef, for each frequency.
+		for (int i = 0; i < curves.Count; i++)
+		{
+			float coef = levelCoefficients[i];
+			if (coef == 1.0f)
+				continue;
+			for (int j = 0; j < curves[i].Count; j++)
+			{
+				AnimationCurve c = curves[i][j].curve;
+				for (int k = 0; k < c.length; k++)
+				{
+					float time = c.keys[k].time;
+					float newValue = c.keys[k].value * coef;
+					c.MoveKey(k, new Keyframe(time, newValue));
+				}
+			}
+		}
+
+		// Reconstruct the original clip - with coefficient applied for each frequency
+		// And the diffs between levels, stored earlier in SetupMultiresolutionFilter()
+		// For each frequency
+		for (int i = curves.Count - 1; i >= 1; i--)
+		{
+			List<MyAnimationCurve> curveCurrentLevel = curves[i];
+			List<MyAnimationCurve> curveHigherLevel = curves[i - 1];
+
+			// For each bone in this level
+			for (int j = 0; j < curveCurrentLevel.Count; j++)
+			{
+				// For each key in this bone's curve
+				int indexInHigherCurve = 0;
+				for (int k = 0; k < curveCurrentLevel[j].curve.length; k++)
+				{
+					// Calculate the two values in higher curve
+					float diff = curveCurrentLevel[j].diffs[k];
+					float t1 = curveHigherLevel[j].curve[indexInHigherCurve].time;
+					float v1 = curveHigherLevel[j].curve[indexInHigherCurve].value;
+					float t2 = curveHigherLevel[j].curve[indexInHigherCurve + 1].time;
+					float v2 = curveHigherLevel[j].curve[indexInHigherCurve + 1].value;
+					if (v1 > v2)
+					{
+						v1 = v1 + diff;
+						v2 = v2 - diff;
+					}
+					else
+					{
+						v2 = v2 + diff;
+						v1 = v1 - diff;
+					}
+					curveHigherLevel[j].curve.MoveKey(indexInHigherCurve, new Keyframe(t1, v1));
+					curveHigherLevel[j].curve.MoveKey(indexInHigherCurve + 1, new Keyframe(t2, v2));
+					indexInHigherCurve += 2;
+				}
+			}
+		}
+
+		// Store the new clip in Asset/filteredAnim
+		AnimationClip clip = new AnimationClip();
+		clip.legacy = originalClip.legacy;
+		EditorCurveBinding[] bindings = AnimationUtility.GetCurveBindings(originalClip);
+		for (int i = 0; i < bindings.Length; i++)
+			AnimationUtility.SetEditorCurve(clip, bindings[i], curves[0][i].curve);
+		AssetDatabase.CreateAsset(clip, "Assets/FilteredAnim.anim");
+	}
+}
+
+public struct MyAnimationCurve
+{
+	public AnimationCurve curve;
+	public List<float> diffs;
+
+	public MyAnimationCurve(AnimationCurve c)
+	{
+		curve = c;
+		diffs = new List<float>();
+	}
+
+	public MyAnimationCurve(AnimationCurve c, List<float> d)
+	{
+		curve = c;
+		diffs = d;
 	}
 }

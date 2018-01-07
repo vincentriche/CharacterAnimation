@@ -145,12 +145,17 @@ public class Controller : MonoBehaviour
 	{
 		if (ragdollEnabled == true)
 		{
+			Vector3 velocity = m_rigidbody.velocity;
+
 			var rigColliders = GetComponentsInChildren<Collider>();
 			var rigRigidbodies = GetComponentsInChildren<Rigidbody>();
 			foreach (Collider col in rigColliders)
 				col.enabled = true;
 			foreach (Rigidbody rb in rigRigidbodies)
+			{
 				rb.isKinematic = false;
+				rb.velocity = velocity;
+			}
 
 			m_rigidbody.isKinematic = true;
 			GetComponent<IKFoot>().enabled = false;
