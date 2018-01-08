@@ -1,8 +1,6 @@
 ﻿using UnityEngine;
 
 // TODO
-// -IKLook at random object in scene
-// -Run animation speed to adapt + transition between run and walk
 // -Edition multi résolution A.Meyer
 public class Controller : MonoBehaviour
 {
@@ -14,13 +12,13 @@ public class Controller : MonoBehaviour
 	public float maxRunningSpeed = 8.0f;
 	public float maxCrouchingSpeed = 1.0f;
 	public float jumpVelocity = 20000f;
+	public float walkAndRunTransitionSpeed = 2.0f;
 	public State state;
 	public GameObject spawnCube;
 
 	private Animator animator;
 	private float cap;
 	private Vector3 groundSpeed;
-	private float walkAndRunTransitionSpeed = 2.0f;
 	private Rigidbody m_rigidbody;
 	private bool ragdollEnabled;
 	private bool automaticRagdoll;
@@ -153,9 +151,9 @@ public class Controller : MonoBehaviour
 		float h = Input.GetAxis("Horizontal");
 
 		// Vertical Axis
-		float f = Input.GetAxis("Vertical");
-		if (state != State.Running)
-			f = Mathf.Clamp(f, 0.0f, 0.5f);
+		Vector3 v = m_rigidbody.velocity;
+		v.y = 0.0f;
+		float f = v.magnitude / maxRunningSpeed;
 
 		// Applying
 		animator.SetFloat("Upspeed", m_rigidbody.velocity.y);
