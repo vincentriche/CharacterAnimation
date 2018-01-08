@@ -44,7 +44,7 @@ public class PlayAnimationEditor : EditorWindow
 
 
 	// The new item in the menu
-	[MenuItem("Window/PlayAnimation", false, 2000)]
+	[MenuItem("Window/Play Animation", false, 2000)]
 	public static void DoWindow()
 	{
 		PlayAnimationEditor m_window = GetWindow<PlayAnimationEditor>();

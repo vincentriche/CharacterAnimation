@@ -12,7 +12,7 @@ public class IKLook : MonoBehaviour
 		animator = GetComponent<Animator>();
 	}
 
-	void OnAnimatorIK()
+	private void OnAnimatorIK()
 	{
 		if (objectToLookAt != null)
 		{

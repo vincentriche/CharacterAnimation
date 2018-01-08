@@ -129,9 +129,6 @@ public class EditAnimationEditor : EditorWindow
 
 	private void MultiresolutionFilter()
 	{
-		// TODO :
-		//  -Store the new clip in Assets/
-
 		// Move each curve according to user defined coef, for each frequency.
 		for (int i = 0; i < curves.Count; i++)
 		{
@@ -140,13 +137,9 @@ public class EditAnimationEditor : EditorWindow
 				continue;
 			for (int j = 0; j < curves[i].Count; j++)
 			{
-				AnimationCurve c = curves[i][j].curve;
-				for (int k = 0; k < c.length; k++)
-				{
-					float time = c.keys[k].time;
-					float newValue = c.keys[k].value * coef;
-					c.MoveKey(k, new Keyframe(time, newValue));
-				}
+				MyAnimationCurve c = curves[i][j];
+				for (int k = 0; k < c.diffs.Count; k++)
+					c.diffs[i] *= coef;
 			}
 		}
 
@@ -198,6 +191,7 @@ public class EditAnimationEditor : EditorWindow
 	}
 }
 
+[System.Serializable]
 public struct MyAnimationCurve
 {
 	public AnimationCurve curve;

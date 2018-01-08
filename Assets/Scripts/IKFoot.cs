@@ -39,7 +39,7 @@ public class IKFoot : MonoBehaviour
 		}
 	}
 
-	void OnAnimatorIK()
+	private void OnAnimatorIK()
 	{
 		float leftFootWeight = animator.GetFloat("LeftFoot");
 		float rightFootWeight = animator.GetFloat("RightFoot");

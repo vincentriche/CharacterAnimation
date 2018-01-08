@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 // TODO
-// -Edition multi résolution A.Meyer
+// -Bug fix multi resolution filtering
 public class Controller : MonoBehaviour
 {
 	public static Controller Instance;
@@ -107,6 +107,7 @@ public class Controller : MonoBehaviour
 		groundSpeed = m_rigidbody.velocity;
 		groundSpeed.y = 0.0f;
 	}
+
 
 	private void Move(Vector3 move)
 	{
