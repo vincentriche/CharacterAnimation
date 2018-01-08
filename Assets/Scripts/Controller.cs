@@ -23,6 +23,8 @@ public class Controller : MonoBehaviour
 	private float walkAndRunTransitionSpeed = 2.0f;
 	private Rigidbody m_rigidbody;
 	private bool ragdollEnabled;
+	private bool automaticRagdoll;
+
 
 	private void Awake()
 	{
@@ -36,9 +38,29 @@ public class Controller : MonoBehaviour
 
 	private void Update()
 	{
-		if (Input.GetKeyDown(KeyCode.R))
+		if (Input.GetKeyDown(KeyCode.L))
 		{
-			ragdollEnabled = !ragdollEnabled;
+			ragdollEnabled = false;
+			automaticRagdoll = false;
+			SwitchRagdollMode();
+			transform.position = new Vector3(0f, -1.14f, 0f);
+		}
+		
+		bool ragdollKeyPressed = Input.GetKey(KeyCode.R);
+		if (automaticRagdoll == false && ragdollKeyPressed == true && ragdollEnabled == false)
+		{
+			ragdollEnabled = true;
+			SwitchRagdollMode();
+		}
+		else if (automaticRagdoll == false && ragdollKeyPressed == false && ragdollEnabled == true)
+		{
+			ragdollEnabled = false;
+			SwitchRagdollMode();
+		}
+		if (Input.GetKeyDown(KeyCode.R) && automaticRagdoll == true)
+		{
+			automaticRagdoll = false;
+			ragdollEnabled = false;
 			SwitchRagdollMode();
 		}
 
@@ -67,13 +89,22 @@ public class Controller : MonoBehaviour
 			m_rigidbody.AddRelativeForce(0f, jumpVelocity, 0f);
 		}
 
-		// Spawn Cubes
-		if (Input.GetKeyDown(KeyCode.L))
+		// Spawn Cube in front of player
+		if (Input.GetKeyDown(KeyCode.F))
 		{
 			Vector3 p = transform.position + transform.forward * 2.0f + transform.up * 2.0f;
 			GameObject o = Instantiate(spawnCube, p, Quaternion.identity);
 			o.GetComponent<Rigidbody>().AddForce(transform.forward * 500.0f);
 		}
+
+		// Spawn Cube to Strike the player
+		if (Input.GetKeyDown(KeyCode.E))
+		{
+			Vector3 p = transform.position + transform.forward * 10.0f + transform.up * 1.5f;
+			GameObject o = Instantiate(spawnCube, p, Quaternion.identity);
+			o.GetComponent<Rigidbody>().AddForce(-transform.forward * 3000.0f);
+		}
+
 
 		groundSpeed = m_rigidbody.velocity;
 		groundSpeed.y = 0.0f;
@@ -139,6 +170,12 @@ public class Controller : MonoBehaviour
 	{
 		if (state == State.Jumped)
 			state = State.Grounded;
+		if (collision.collider.CompareTag("Obstacle"))
+		{
+			automaticRagdoll = true;
+			ragdollEnabled = true;
+			SwitchRagdollMode();
+		}
 	}
 
 	private void SwitchRagdollMode()
@@ -159,6 +196,7 @@ public class Controller : MonoBehaviour
 
 			m_rigidbody.isKinematic = true;
 			GetComponent<IKFoot>().enabled = false;
+			GetComponent<IKLook>().enabled = false;
 			GetComponentInChildren<MouseLook>().enabled = false;
 			GetComponent<CapsuleCollider>().enabled = false;
 			animator.enabled = false;
@@ -173,6 +211,7 @@ public class Controller : MonoBehaviour
 				rb.isKinematic = true;
 
 			GetComponent<IKFoot>().enabled = true;
+			GetComponent<IKLook>().enabled = true;
 			GetComponentInChildren<MouseLook>().enabled = true;
 			GetComponent<CapsuleCollider>().enabled = true;
 			animator.enabled = true;
