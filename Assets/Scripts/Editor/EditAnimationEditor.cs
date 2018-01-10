@@ -14,6 +14,9 @@ public class EditAnimationEditor : EditorWindow
 	// Store the user defined coefficients for each level N
 	private List<float> levelCoefficients;
 
+	private List<AnimationCurve> baseCurves;
+	private bool multiInitialized = false;
+
 
 	[MenuItem("Window/Edit Animation", false, 2000)]
 	public static void ShowWindow()
@@ -46,7 +49,7 @@ public class EditAnimationEditor : EditorWindow
 			{
 				EditorGUI.BeginChangeCheck();
 				N = EditorGUILayout.IntField("N", N);
-				if (EditorGUI.EndChangeCheck() == true)
+				if (EditorGUI.EndChangeCheck() == true && !multiInitialized)
 					SetupMultiresolutionEdition();
 
 				if (levelCoefficients != null)
@@ -58,6 +61,8 @@ public class EditAnimationEditor : EditorWindow
 						MultiresolutionFilter();
 				}
 			}
+			else
+				multiInitialized = false;
 		}
 		EditorGUILayout.EndVertical();
 	}
@@ -92,9 +97,13 @@ public class EditAnimationEditor : EditorWindow
 		if (N == 0)
 			return;
 
+		multiInitialized = true;
+
 		levelCoefficients = new List<float>();
 		for (int i = 0; i < N; i++)
 			levelCoefficients.Add(1.0f);
+
+		baseCurves = new List<AnimationCurve>();
 
 		curves = new List<List<MyAnimationCurve>>();
 		for (int i = 0; i < N; i++)
@@ -105,6 +114,7 @@ public class EditAnimationEditor : EditorWindow
 
 			// First level : Base curve
 			curves[0].Add(new MyAnimationCurve(boneCurve));
+			baseCurves.Add(boneCurve);
 
 			// Calculate each curve for the bone
 			AnimationCurve lastCurve = boneCurve;
@@ -137,9 +147,8 @@ public class EditAnimationEditor : EditorWindow
 				continue;
 			for (int j = 0; j < curves[i].Count; j++)
 			{
-				MyAnimationCurve c = curves[i][j];
-				for (int k = 0; k < c.diffs.Count; k++)
-					c.diffs[i] *= coef;
+				for (int k = 0; k < curves[i][j].diffs.Count; k++)
+					curves[i][j].diffs[k] *= coef;
 			}
 		}
 
@@ -148,40 +157,46 @@ public class EditAnimationEditor : EditorWindow
 		// For each frequency
 		for (int i = curves.Count - 1; i >= 1; i--)
 		{
-			List<MyAnimationCurve> curveCurrentLevel = curves[i];
-			List<MyAnimationCurve> curveHigherLevel = curves[i - 1];
-
 			// For each bone in this level
-			for (int j = 0; j < curveCurrentLevel.Count; j++)
+			for (int j = 0; j < curves[i].Count; j++)
 			{
 				// For each key in this bone's curve
+				// We move the two upper key in parent
 				int indexInHigherCurve = 0;
-				for (int k = 0; k < curveCurrentLevel[j].curve.length; k++)
+				for (int k = 0; k < curves[i][j].curve.length; k++)
 				{
 					// Calculate the two values in higher curve
-					float diff = curveCurrentLevel[j].diffs[k];
-					float t1 = curveHigherLevel[j].curve[indexInHigherCurve].time;
-					float v1 = curveHigherLevel[j].curve[indexInHigherCurve].value;
-					float t2 = curveHigherLevel[j].curve[indexInHigherCurve + 1].time;
-					float v2 = curveHigherLevel[j].curve[indexInHigherCurve + 1].value;
+					float diff = curves[i][j].diffs[k];
+					float v = curves[i][j].curve[k].value;
+
+					// Todo : bug fix
+					if (indexInHigherCurve + 1 >= curves[i - 1][j].curve.length)
+						continue;
+
+					float v1 = curves[i - 1][j].curve[indexInHigherCurve].value;
+					float v2 = curves[i - 1][j].curve[indexInHigherCurve + 1].value;
+
 					if (v1 > v2)
 					{
-						v1 = v1 + diff;
-						v2 = v2 - diff;
+						v1 = v + diff;
+						v2 = v - diff;
 					}
 					else
 					{
-						v2 = v2 + diff;
-						v1 = v1 - diff;
+						v1 = v - diff;
+						v2 = v + diff;
 					}
-					curveHigherLevel[j].curve.MoveKey(indexInHigherCurve, new Keyframe(t1, v1));
-					curveHigherLevel[j].curve.MoveKey(indexInHigherCurve + 1, new Keyframe(t2, v2));
+
+					float t1 = curves[i - 1][j].curve[indexInHigherCurve].time;
+					float t2 = curves[i - 1][j].curve[indexInHigherCurve + 1].value;
+					curves[i - 1][j].curve.MoveKey(indexInHigherCurve, new Keyframe(t1, v1));
+					curves[i - 1][j].curve.MoveKey(indexInHigherCurve + 1, new Keyframe(t2, v2));
 					indexInHigherCurve += 2;
 				}
 			}
 		}
 
-		// Store the new clip in Asset/filteredAnim
+		// Store the new clip in Asset
 		AnimationClip clip = new AnimationClip();
 		clip.legacy = originalClip.legacy;
 		EditorCurveBinding[] bindings = AnimationUtility.GetCurveBindings(originalClip);
@@ -192,7 +207,7 @@ public class EditAnimationEditor : EditorWindow
 }
 
 [System.Serializable]
-public struct MyAnimationCurve
+public class MyAnimationCurve
 {
 	public AnimationCurve curve;
 	public List<float> diffs;
