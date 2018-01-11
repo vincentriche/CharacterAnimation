@@ -116,20 +116,22 @@ public class EditAnimationEditor : EditorWindow
 		}
 		levels[0].keyCount = levels[0].bonesInfo[0].curve.length;
 		AnimationLevel.boneCount = boneCount;
+		for (int i = 1; i < levels.Count; i++)
+			levels[i].ResizeList();
 
 		// Init other levels, each time with N / 2 values.
 		for (int i = 1; i < N; i++)
 		{
 			// For each bone, compute the animation curve at lower frequency
 			levels[i].keyCount = levels[i - 1].keyCount / 2;
+			int iUpper = i - 1;
 			for (int j = 0; j < AnimationLevel.boneCount; j++)
 			{
 				// Compute each key based on : (upper level key) and (upper level key + 1)
-				int upperLevelIndex = 0;
-				for (int k = 0; k < levels[i].keyCount; k++)
+				for (int k = 0; k + 1 < levels[iUpper].keyCount; k += 2)
 				{
-					Keyframe upperLevelKey1 = levels[i - 1].bonesInfo[j].curve[upperLevelIndex];
-					Keyframe upperLevelKey2 = levels[i - 1].bonesInfo[j].curve[upperLevelIndex + 1];
+					Keyframe upperLevelKey1 = levels[iUpper].bonesInfo[j].curve[k];
+					Keyframe upperLevelKey2 = levels[iUpper].bonesInfo[j].curve[k + 1];
 
 					Keyframe newKey = new Keyframe();
 					newKey.time = (upperLevelKey1.time + upperLevelKey2.time) / 2.0f;
@@ -159,9 +161,38 @@ public class EditAnimationEditor : EditorWindow
 			}
 		}
 
+		// For each level, compute the upper level based on diffs.
 		for (int i = N - 1; i >= 1; i--)
 		{
-				
+			// For each bone in level
+			for (int j = 0; j < AnimationLevel.boneCount; j++)
+			{
+				// For each key in bone
+				int upperLevelIndex = 0;
+				for (int k = 0; k < levels[i].keyCount; k++)
+				{
+					Keyframe upperLevelKey1 = levels[i - 1].bonesInfo[j].curve[upperLevelIndex];
+					Keyframe upperLevelKey2 = levels[i - 1].bonesInfo[j].curve[upperLevelIndex + 1];
+					Keyframe currentLevelKey = levels[i].bonesInfo[j].curve[k];
+
+					float diff = levels[i].bonesInfo[j].diffs[k];
+
+					if (upperLevelKey1.value > upperLevelKey2.value)
+					{
+						upperLevelKey1.value = currentLevelKey.value + diff;
+						upperLevelKey2.value = currentLevelKey.value - diff;
+					}
+					else
+					{
+						upperLevelKey1.value = currentLevelKey.value - diff;
+						upperLevelKey2.value = currentLevelKey.value + diff;
+					}
+
+					levels[i - 1].bonesInfo[j].curve.MoveKey(upperLevelIndex, upperLevelKey1);
+					levels[i - 1].bonesInfo[j].curve.MoveKey(upperLevelIndex + 1, upperLevelKey2);
+					upperLevelIndex += 2;
+				}
+			}
 		}
 
 		// Store the new clip in Asset
@@ -178,13 +209,26 @@ public class AnimationLevel
 {
 	public static int boneCount;
 	public int keyCount;
-	public List<MyAnimationCurve> bonesInfo;
+	public List<MyAnimationCurve> bonesInfo = new List<MyAnimationCurve>();
+
+	public void ResizeList()
+	{
+		bonesInfo.Clear();
+		for (int i = 0; i < boneCount; i++)
+			bonesInfo.Add(new MyAnimationCurve());
+	}
 }
 
 public class MyAnimationCurve
 {
 	public AnimationCurve curve;
 	public List<float> diffs;
+
+	public MyAnimationCurve()
+	{
+		curve = new AnimationCurve();
+		diffs = new List<float>();
+	}
 
 	public MyAnimationCurve(AnimationCurve c)
 	{
