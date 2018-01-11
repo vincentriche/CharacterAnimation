@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
 
-// TODO
-// -Bug fix multi resolution filtering
 public class Controller : MonoBehaviour
 {
 	public static Controller Instance;
