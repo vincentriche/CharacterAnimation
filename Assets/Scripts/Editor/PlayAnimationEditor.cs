@@ -121,7 +121,8 @@ public class PlayAnimationEditor : EditorWindow
 		}
 
 		// Sample Animation & Add new bones positions
-		for (float sampleTime = firstFrameTime; sampleTime < clipLength; sampleTime += 0.01f)
+		float frameDuration = 1 / clipToPlay.frameRate;
+		for (float sampleTime = firstFrameTime; sampleTime < clipLength; sampleTime += frameDuration)
 		{
 			AnimationMode.BeginSampling();
 			AnimationMode.SampleAnimationClip(skeleton, clipToPlay, sampleTime);

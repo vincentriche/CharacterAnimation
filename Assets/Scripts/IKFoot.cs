@@ -5,6 +5,7 @@ public class IKFoot : MonoBehaviour
 {
 	private Animator animator;
 	private Transform leftFoot, rightFoot;
+
 	private Vector3 nextLeftFootPos, nextRightFootPos;
 	private Quaternion nextLeftFootRot, nextRightFootRot;
 	private RaycastHit hitInfo;
@@ -44,14 +45,28 @@ public class IKFoot : MonoBehaviour
 		float leftFootWeight = animator.GetFloat("LeftFoot");
 		float rightFootWeight = animator.GetFloat("RightFoot");
 
-		animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, rightFootWeight);
-		animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, rightFootWeight);
-		animator.SetIKPosition(AvatarIKGoal.RightFoot, nextRightFootPos);
-		animator.SetIKRotation(AvatarIKGoal.RightFoot, nextRightFootRot);
+		// Only change position & rotation if significant difference between frames
+		float dPosLeft = Vector3.Distance(leftFoot.position, nextLeftFootPos);
+		float dPosRight = Vector3.Distance(rightFoot.position, nextRightFootPos);
+		float dRotLeft = Quaternion.Angle(leftFoot.rotation, nextLeftFootRot);
+		float dRotRight = Quaternion.Angle(rightFoot.rotation, nextRightFootRot);
 
+		// Left foot
+		if (dPosLeft > 0.5f)
+		{
+			animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, leftFootWeight);
+			animator.SetIKPosition(AvatarIKGoal.LeftFoot, nextLeftFootPos);
+		}
 		animator.SetIKRotationWeight(AvatarIKGoal.LeftFoot, leftFootWeight);
-		animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, leftFootWeight);
-		animator.SetIKPosition(AvatarIKGoal.LeftFoot, nextLeftFootPos);
 		animator.SetIKRotation(AvatarIKGoal.LeftFoot, nextLeftFootRot);
+
+		// Right foot
+		if (dPosRight > 0.5f)
+		{
+			animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, rightFootWeight);
+			animator.SetIKPosition(AvatarIKGoal.RightFoot, nextRightFootPos);
+		}
+		animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, rightFootWeight);
+		animator.SetIKRotation(AvatarIKGoal.RightFoot, nextRightFootRot);
 	}
 }
